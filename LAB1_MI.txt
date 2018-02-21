@@ -1,0 +1,34 @@
+--1. WYŒWIETLIÆ WYDZIA£ Z NAJWIEKSZ¥ AKTUALNIE LICZBÊ ZATRUDNIONYCH OSÓB.
+
+CREATE VIEW wydz_max_os AS
+SELECT INITCAP(w.nazwa) wydzial , COUNT(z.id_os) liczba_os
+FROM wydzialy w join zatrudnienia z ON w.id_w=z.id_w
+WHERE z.do is NULL
+GROUP BY INITCAP(w.nazwa)
+ORDER BY 2 DESC;
+
+SELECT wydzial, liczba_os
+FROM wydz_max_os
+WHERE liczba_os=(SELECT MAX(liczba_os) FROM wydz_max_os);
+
+------------------------------------------------------------------------------------------------
+--2. Dla ka¿dej p³ci wyœwietliæ osoby o najdluzszym imieniu.
+
+SELECT INITCAP(o.nazwisko) || ' ' || INITCAP(o.imie1) osoba, LENGTH(o.imie1) dl_imienia, o.plec
+FROM osoby o
+WHERE LENGTH(o.imie1)=(SELECT MAX(LENGTH(o1.imie1)) 
+                      FROM osoby o1
+                      WHERE o.plec=o1.plec);
+
+--3. Wyœwietliæ te stanowiska ktore zatrudniaj¹ wiecej niz jedna osoba ktorej imie 
+zawiera wiecej niz jedna litere a i posortowa malej¹co.
+
+SELECT s.nazwa, COUNT(z.id_os) liczba_os
+FROM stanowiska s JOIN zatrudnienia z ON s.id_s=z.id_s
+JOIN osoby o ON z.id_os=o.id_os
+WHERE LOWER(imie1) LIKE '%a%' AND z.do IS NULL
+GROUP BY  s.nazwa
+HAVING COUNT (z.id_os)>1
+ORDER BY 2 DESC;
+
+------------------------------------------------------------------------------------------------
