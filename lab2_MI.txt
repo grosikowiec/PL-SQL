@@ -1,0 +1,78 @@
+1. Dla poszczególnych  wydzia³ów wyœwietliæ œredni¹ z aktualnie pobieranych pensji, przy czym nie wyœwietlaæ wydzia³ów, na którym œrednia ta jest najwiêksza.
+
+CREATE VIEW srednia_wydzialu AS
+SELECT w.nazwa, AVG(z.pensja) sr_pensja
+FROM zatrudnienia z join wydzialy w on z.id_w=w.id_w
+WHERE z.do IS NULL
+GROUP BY w.nazwa
+ORDER BY 2 DESC;
+
+SELECT sw.nazwa, sw.sr_pensja
+FROM srednia_wydzialu sw
+WHERE sr_pensja <> (SELECT MAX(sr_pensja)
+                    FROM srednia_wydzialu);
+
+LUB
+
+SELECT nazwa, sr_pensja
+FROM srednia_wydzialu
+MINUS
+SELECT nazwa, sr_pensja
+FROM srednia_wydzialu
+WHERE sr_pensja(SELECT MAX(sr_pensja) FROM srednia_wydzialu
+
+-----------------------------------------------------------------------------------------
+
+2. Dla poszczególnych  wydzia³ów wyœwietliæ œredni¹ z aktualnie pobieranych pensji, przy czym nie wyœwietlaæ wydzia³ów, na którym s¹ dwie najwiêksze œrednie.
+
+SELECT INITCAP(nazwa), sr_pensja
+FROM srednia_wydzialu
+WHERE sr_pensja<(SELECT MAX(sr_pensja) 
+                  FROM srednia_wydzialu 
+                  WHERE sr_pensja <(SELECT MAX(sr_pensja) 
+                                    FROM srednia_wydzialu))
+                                    ORDER BY 2 DESC;
+LUB
+
+WITH srednia_pensja2 AS
+(SELECT nazwa, sr_pensja
+FROM srednia_wydzialu
+MINUS
+SELECT nazwa, sr_pensja
+FROM srednia_wydzialu
+WHERE sr_pensja=(SELECT MAX(sr_pensja) FROM srednia_wydzialu))
+
+SELECT nazwa, sr_pensja
+FROM srednia_pensja2
+MINUS
+SELECT nazwa, srednia
+FROM srednia_pensja2
+WHERE sr_pensja=(SELECT MAX(sr_pensja) FROM srednia_pensja2)
+
+----------------------------------------------------------------------------------------
+3. DO DOMU (wyrzucic 3 najwieksze srednie pensje)
+lub 2 osoby o najdluzszych imionach, 3 os o onajdluzszych imionach
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+					PL/SQL
+////////////////////////////////////////////////////////////////////////////////////////
+
+1.Napisaæ kod bloku anonimowego w jêzyku PL/SQL, za pomoca którego z tabeli osoby bêdzie mo¿na wyœwietliæ dane osoby o danym nazwisku i imieniu np. Lis, Jan, które zostan¹m podane poprzez zainicjowanie odpowiednich zmiennych PL/SQL w sekcji deklaracji bloku.
+
+DECLARE
+  z_id_os INT;
+  z_imie VARCHAR2(30):='Jan';
+  z_nazwisko VARCHAR2(40):='Lis';
+  z_plec VARCHAR(10);
+  z_d_ur DATE;
+BEGIN
+  SELECT id_os,INITCAP(o.imie1),INITCAP(o.nazwisko), o.plec, o.d_ur
+  INTO z_id_os, z_imie,  z_nazwisko, z_plec, z_d_ur
+  FROM osoby o
+  WHERE INITCAP(o.imie1)=z_imie AND INITCAP(o.nazwisko)=z_nazwisko;
+  DBMS_OUTPUT.PUT_LINE('Osoba o id '|| z_id_os || ' : '||z_imie ||' '|| z_nazwisko ||' '|| z_plec ||' '|| z_d_ur);
+END;
+/
+
