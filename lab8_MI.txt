@@ -1,0 +1,223 @@
+1. Zaprojektowaæ blok anonimowy PL/SQL, umozliwiaj¹cy wyœwietlenie dla poszczególnych wydzia³ó komunikatu: "Kierownikiem wydzia³u Matematyki jest Krawczyk Adam.".
+
+DECLARE
+  z_imie osoby.imie1%TYPE;
+  z_nazwisko osoby.nazwisko%TYPE;
+  z_nazwa_wydz wydzialy.nazwa%TYPE;
+  z_licznik NUMBER:=1;
+  CURSOR k_kierownicy IS
+    SELECT INITCAP(o.imie1), INITCAP(o.nazwisko), INITCAP(w.nazwa)
+    FROM osoby o JOIN kierownicy k ON o.id_os=k.id_os JOIN wydzialy w ON k.id_w=w.id_w
+    WHERE k.do IS NULL;
+  
+
+BEGIN
+
+  OPEN  k_kierownicy;
+  LOOP
+    FETCH k_kierownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+  EXIT WHEN k_kierownicy%NOTFOUND;
+    CASE z_nazwa_wydz
+    WHEN 'Matematyka' THEN z_nazwa_wydz:='Matematyki';
+    WHEN 'Fizyka' THEN z_nazwa_wydz:='Fizyki';
+    WHEN 'Prawo' THEN z_nazwa_wydz:='Prawa';
+    WHEN 'Ekonomia' THEN z_nazwa_wydz:='Ekonomii';
+    WHEN 'Biologia' THEN z_nazwa_wydz:='Biologii';
+    WHEN 'Filologia' THEN z_nazwa_wydz:='Filologii';
+    END CASE;
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. Kierownikiem wydzialu '||z_nazwa_wydz ||' jest '||z_nazwisko||' '||z_imie);
+    z_licznik:=z_licznik+1;
+  END LOOP;
+CLOSE k_kierownicy; 
+END;
+/
+
+------------------------------------------------------------------------------------------------------------------
+
+2. Napisaæ kod bloku anonimowego PL/SQL, za pomoca którtego bêdzie wyœwietlana na poszczególnych wydzia³ach lista osób aktualnie zatrudnionych przy czym kazda osoba bêdzie poprzedzona numerem. 
+"Lista osób zatrudnionych na wydziale Matematyka:
+1. Duda Barbara
+2. ...
+..."
+
+DECLARE
+  z_imie osoby.imie1%TYPE;
+  z_nazwisko osoby.nazwisko%TYPE;
+  z_nazwa_wydz wydzialy.nazwa%TYPE;
+  z_licznik NUMBER:=1;
+  z_petla NUMBER:=1;
+  CURSOR k_pracownicy IS
+    SELECT INITCAP(o.imie1) zImie, INITCAP(o.nazwisko) zNazwisko, INITCAP(w.nazwa) zNazwa
+    FROM osoby o JOIN zatrudnienia z ON o.id_os=z.id_os JOIN wydzialy w ON z.id_w=w.id_w
+    WHERE z.do IS NULL;
+  
+
+BEGIN
+
+  
+  OPEN  k_pracownicy;
+  DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale Matematyka:');
+  LOOP
+    FETCH k_pracownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+    EXIT WHEN k_pracownicy%NOTFOUND;
+    IF z_nazwa_wydz='Matematyka' THEN
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| z_nazwisko ||' '||z_imie);
+    z_licznik:=z_licznik+1;
+    END IF;
+  END LOOP;
+  CLOSE k_pracownicy;
+  
+  z_licznik:=1;
+  
+  OPEN  k_pracownicy;
+  DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale Fizyka:');
+  LOOP
+    FETCH k_pracownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+    EXIT WHEN k_pracownicy%NOTFOUND;
+    IF z_nazwa_wydz='Fizyka' THEN
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| z_nazwisko ||' '||z_imie);
+    z_licznik:=z_licznik+1;
+    END IF;
+  END LOOP;
+  CLOSE k_pracownicy; 
+  
+  z_licznik:=1;
+  
+  OPEN  k_pracownicy;
+  DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale Prawo:');
+  LOOP
+    FETCH k_pracownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+    EXIT WHEN k_pracownicy%NOTFOUND;
+    IF z_nazwa_wydz='Prawo' THEN
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| z_nazwisko ||' '||z_imie);
+    z_licznik:=z_licznik+1;
+    END IF;
+  END LOOP;
+  CLOSE k_pracownicy; 
+  
+  z_licznik:=1;
+  
+  OPEN  k_pracownicy;
+  DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale Ekonomia:');
+  LOOP
+    FETCH k_pracownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+    EXIT WHEN k_pracownicy%NOTFOUND;
+    IF z_nazwa_wydz='Ekonomia' THEN
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| z_nazwisko ||' '||z_imie);
+    z_licznik:=z_licznik+1;
+    END IF;
+  END LOOP;
+  CLOSE k_pracownicy; 
+  
+  z_licznik:=1;
+  
+  OPEN  k_pracownicy;
+  DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale Filologia:');
+  LOOP
+    FETCH k_pracownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+    EXIT WHEN k_pracownicy%NOTFOUND;
+    IF z_nazwa_wydz='Filologia' THEN
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| z_nazwisko ||' '||z_imie);
+    z_licznik:=z_licznik+1;
+    END IF;
+  END LOOP;
+  CLOSE k_pracownicy; 
+  
+  z_licznik:=1;
+  
+  OPEN  k_pracownicy;
+  DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale Biologia:');
+  LOOP
+    FETCH k_pracownicy INTO z_imie, z_nazwisko, z_nazwa_wydz;
+    EXIT WHEN k_pracownicy%NOTFOUND;
+    IF z_nazwa_wydz='Biologia' THEN
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| z_nazwisko ||' '||z_imie);
+    z_licznik:=z_licznik+1;
+    END IF;
+  END LOOP;
+  CLOSE k_pracownicy; 
+END;
+/
+
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+DECLARE
+  z_licznik NUMBER:=1;
+  
+  CURSOR k_wydzialy IS
+    SELECT  id_w, INITCAP(nazwa) wydzial
+    FROM wydzialy
+    ORDER BY 2ASC;
+  
+  CURSOR k_pracownicy ( p_id_w wydzialy.id_w%TYPE )IS
+    SELECT INITCAP(o.imie1) zImie, INITCAP(o.nazwisko) zNazwisko
+    FROM osoby o JOIN zatrudnienia z ON o.id_os=z.id_os 
+    WHERE p_id_w=z.id_w AND z.do IS NULL
+    ORDER BY 2 ASC, 1 ASC;
+  
+
+BEGIN
+
+   FOR i_licznik IN k_wydzialy LOOP
+    DBMS_OUTPUT.PUT_LINE('Lista osoób zatrudnionych na wydziale '||i_licznik.wydzial||':');
+    z_licznik:=0;
+    FOR j IN k_pracownicy (i_licznik.id_w) LOOP
+    z_licznik:=z_licznik+1;
+    DBMS_OUTPUT.PUT_LINE(z_licznik||'. '|| j.zNazwisko ||' '||j.zImie);
+    END LOOP;
+  END LOOP;
+END;
+/
+
+
+
+3.  Napisaæ kod bloku anonimowego PL/SQL, za pomoc¹ którego bêdzie wyœwietlony rok ,miesiac oraz lista osoób zatrudniona w tym okresie.
+Rok zatrudniania - {rok}
+miesiac zatrudnienia -{miesiac_cyfra}}, a nastepnie lista osob zatrudnionych w tym okresie.
+Zaczynamy od ostatniego roku
+
+
+DECLARE
+  z_licznik NUMBER:=1;
+  z_rok VARCHAR2;
+  z_data VARCHAR2;
+  CURSOR k_rok IS
+    SELECT DISTINCT(TO_CHAR(od,'YYYY')) zRok
+    FROM zatrudnienia
+    ORDER BY 1 DESC, 2 ASC;
+    
+  CURSOR k_miesiac IS
+    SELECT DISTINCT(TO_CHAR(od,'MM')) zMiesiac
+    FROM zatrudnienia
+    WHERE TO_CHAR(od,'YYYY')=z_rok
+    ORDER BY 1 DESC, 2 ASC;
+    
+  CURSOR k_pracownicy IS
+    SELECT INITCAP(o.imie1) zImie, INITCAP(o.nazwisko) zNazwisko
+    FROM osoby o JOIN zatrudnienia z ON o.id_os=z.id_os 
+    WHERE p_id_z=z.id_z AND z.do IS NULL
+    ORDER BY 2 ASC, 1 ASC;
+  
+
+BEGIN
+
+
+   FOR i IN k_rok LOOP
+    DBMS_OUTPUT.PUT_LINE('Rok zatrudniania - '||i.zRok);
+    z_rok:=i.zRok;
+    FOR j IN k_miesiac LOOP
+      DBMS_OUTPUT.PUT_LINE('  Miesiac zatrudniania - '||j.zMiesiac);
+      z_licznik:=0;
+      FOR k IN k_pracownicy LOOP
+      z_data:=z_rok || '/' || k.zMiesiac;
+      
+        z_licznik:=z_licznik+1;
+        DBMS_OUTPUT.PUT_LINE('    '||z_licznik||'. '|| j.zNazwisko ||' '||j.zImie||'
+        ');
+        ......\
+        ......
+      END LOOP;
+    END LOOP;
+  END LOOP;
+END;
+/ nieskonczone!!!
