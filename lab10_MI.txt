@@ -178,14 +178,21 @@ z_plec osoby.plec%TYPE;
 BEGIN
   SELECT id_os, INITCAP(nazwisko) || INITCAP(imie1) nazwisko_i_imie, d_ur, plec
   INTO z_id, z_nazwa, z_d_ur, z_plec
-  FROM osoby o JOIN wydzialy w ON o.id_os=w.id_os
+  FROM osoby o JOIN zatrudniania z ON  o.id_os=z.id_os JOIN wydzialy w ON z.id_w=w.id_w
   WHERE INITCAP(w.nazwa)=INITCAP(p_Nazwa_wydzialu)
   AND id_os=(SELECT id_os
              FROM kierownicy
              WHERE (do-od)=(SELECT MAX(NVL(do-od,SYSDATE))
                             FROM kierownicy));
+  DBMS_OUTPUT.PUT_LINE('z_id');
 END;
 /
+
+BEGIN
+  kierownik_Naj('MATEMATYKA');
+END;
+/
+
  nieskonczone!!!!!!!!!
 
 
