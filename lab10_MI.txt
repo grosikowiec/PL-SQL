@@ -1,148 +1,191 @@
-1. Zadeklarowaæ zmienn¹ z_nazwisko o d³ max 10 znaków które w sekcji wykonawczej przypisac wartosc np. "Nowak-Konopacka" i obsluzyc wyj¹tek który sie pojawi za pomoc¹ komuniaktu "Za d³ugie nazwisko".
+1. Utworzyc tabelke, tabela_bledow, sk³adajaca sie z 2 pól: pole o nazwie kod typu numerycznego i pole o nazwie komunikat typu Tekstowego o max rozmiarze 200. Napisaæ kod bloku anonimowego, w którym za pomoc¹ kursora niejawnego wyœwietlimy onfo o:
+a) osobie której identyfIKATOR id=50
+b) wszystkich osobach gdzie id < 50
+Zaprojektowac obsluge wyj¹tków za pomoc¹ others, w ten sposob ze do tabeli tabela_bledow, bedzie wstawiany kod i komunikat o bledzie, ktory zostal obsluzony za pmoca othersa po uruchomieniu tego bloku.
+
+a)
 
 DECLARE
-  z_nazwisko varchar2(10);
+  z_id_os osoby.id_os%TYPE:=50;
+  z_imie osoby.imie1%TYPE;
+  z_nazwisko osoby.nazwisko%TYPE;
+  z_kod NUMERIC;
+  z_komunikat VARCHAR2(200);
+
 BEGIN
-  z_nazwisko:='Nowak-Konopacka';
-EXCEPTION
-  WHEN VALUE_ERROR THEN
-  DBMS_OUTPUT.PUT_LINE('Error: Za dlugie nazwisko');
-END;
-/
--------------------------------------------------------------------------------------------------------------------
-
-2. Za pomoc¹ KURSORA NIEJAWNEGO wyœwietliæ dane tych osób, których id jest >= od pewnej liczby naturalnej zadeklarowanej w sekcji deklaracji. W bloku anonimowym z tym kursorem obs³uzyæ wszystkie wyj¹tki, które mog¹ siê pojawiæ za pomoc¹ odpowiednich komentarzy.
-
-DECLARE 
-z_id osoby.id_os%TYPE:=40;
-z_imie osoby.imie1%TYPE;
-z_nazwisko osoby.nazwisko%TYPE;
-BEGIN
-    SELECT  id_os, imie1, nazwisko
-    INTO z_id, z_imie, z_nazwisko
-    FROM osoby
-    WHERE id_os>=z_id;
-
-EXCEPTION
-  WHEN TOO_MANY_ROWS THEN
-  DBMS_OUTPUT.PUT_LINE('za duzo danych');
-  WHEN NO_DATA_FOUND THEN
-  --DBMS_OUTPUT.PUT_LINE('nie znaleziono danych');
-  RAISE_APPLICATION_ERROR(-20000,'nie znaleziono danych');
-END;
-/
-  
-
-Zanu¿yæ w bloku anonimowy z poprzedniego zadania w nadbloku anonimowym z obsluga tych wyjaktow. Wy³¹czaæ/usuwac obs³ugê wyj¹tków w nadbloku, podbloku, (rise i dbms tez pozamieniac. 
-
-DECLARE 
-z_id osoby.id_os%TYPE:=6;
-z_imie osoby.imie1%TYPE;
-z_nazwisko osoby.nazwisko%TYPE;
-BEGIN
-  SELECT nazwisko, imie1
-  INTO z_nazwisko, z_imie
+  SELECT id_os, imie1, nazwisko
+  INTO z_id_os, z_imie, z_nazwisko
   FROM osoby
-  WHERE id_os=1;
-  DBMS_OUTPUT.PUT_LINE('Osoba ma id_os=1');
-  
-  BEGIN
-    SELECT  id_os, imie1, nazwisko
-    INTO z_id, z_imie, z_nazwisko
-    FROM osoby
-    WHERE id_os>=z_id;
+  WHERE id_os=z_id_os;
 
-    EXCEPTION
-      WHEN TOO_MANY_ROWS THEN
-      DBMS_OUTPUT.PUT_LINE('Wiecej niz 1 rekord');
-      WHEN NO_DATA_FOUND THEN
-      --DBMS_OUTPUT.PUT_LINE('nie znaleziono danych');
-      RAISE_APPLICATION_ERROR(-20000,'nie ma takich id');
-  END;
 EXCEPTION
-  WHEN TOO_MANY_ROWS THEN
-  --DBMS_OUTPUT.PUT_LINE('zbyt wiele rekordow');
-  RAISE_APPLICATION_ERROR(-20000,'zbyt wiele rekordow');
-  WHEN NO_DATA_FOUND THEN
-  --DBMS_OUTPUT.PUT_LINE('nie znaleziono danych');
-  RAISE_APPLICATION_ERROR(-20000,'brak danych');
+
+  WHEN OTHERS THEN
+  z_kod:=SQLCODE;
+  z_komunikat:=SUBSTR(SQLERRM,1,200);
+  INSERT INTO tabela_bledow(kod,komunikat) 
+  VALUES (z_kod, z_komunikat);
+  
+END;
+/
+
+b)
+
+DECLARE
+  z_id_os osoby.id_os%TYPE:=50;
+  z_imie osoby.imie1%TYPE;
+  z_nazwisko osoby.nazwisko%TYPE;
+  z_kod NUMERIC;
+  z_komunikat VARCHAR2(200);
+  z_licznik INT;
+
+BEGIN
+  
+  z_licznik:=1;
+  
+  LOOP
+  SELECT id_os, imie1, nazwisko
+  INTO z_id_os, z_imie, z_nazwisko
+  FROM osoby
+  WHERE id_os=z_licznik;
+  z_licznik:=z_licznik+1;
+  DBMS_OUTPUT.PUT_LINE(z_id_os ||' '|| z_imie||' '|| z_nazwisko);
+  EXIT WHEN z_licznik=50;
+  END LOOP;
+
+EXCEPTION
+
+  WHEN OTHERS THEN
+  z_kod:=SQLCODE;
+  z_komunikat:=SUBSTR(SQLERRM,1,200);
+  INSERT INTO tabela_bledow(kod,komunikat) 
+  VALUES (z_kod, z_komunikat);
   
 END;
 /
 -------------------------------------------------------------------------------------------------------------------
-3.Istnieje potrzeba ograniczenia p³ac na wydzialach. Nalezy maksymalna aktualnie wyplacana pensjê ograniczyc do 4000. Jesli aktualnie najwyzsza pensja przekracza nalezy napisac komunikat.
+
+2. Napisac procedure dodaj_nowa_osoba, która bedzie wprowadza³a osobe do tabeli osoby, przy czym uwzglêdniæ fakt sprawdzenia wprowadzania istniejacej juz osoby.
 
 
-DECLARE
-z_maxPensja zatrudnienia.pensja%TYPE;
-z_limit NUMBER:=4000;
-w_zbytWysokaPensja EXCEPTION;
+CREATE OR REPLACE PROCEDURE dodaj_nowa_osobe(
+  p_Id osoby.id_os%TYPE,
+  p_Nazwisko osoby.nazwisko%TYPE,
+  p_Imie osoby.imie1%TYPE,
+  p_Imie2 osoby.imie2%TYPE,
+  p_D_ur osoby.d_ur%TYPE,
+  p_Plec osoby.plec%TYPE) AS
+  
+  z_sprawdzenie NUMBER;
 BEGIN
-  SELECT MAX(pensja)
-  INTO z_maxPensja
-  FROM zatrudnienia;
-  DBMS_OUTPUT.PUT_LINE('Pensja max: '||z_maxPensja);
-
-  IF z_maxPensja>z_limit THEN
-  RAISE w_zbytWysokaPensja;
+  
+  SELECT COUNT(id_os)
+  INTO z_sprawdzenie
+  FROM osoby
+  WHERE id_os=p_Id;
+  
+  IF z_sprawdzenie=1 THEN
+    RAISE_APPLICATION_ERROR(-20005,'Jest juz taka osoba o tych danych');
+  ELSE
+    INSERT INTO osoby(id_os,nazwisko, imie1, imie2, d_ur, plec)
+    VALUES (p_Id, p_Nazwisko, p_Imie, p_Imie2, p_D_ur, p_Plec);
+    COMMIT;
   END IF;
+  
+END;
+/
 
-EXCEPTION
-  WHEN w_zbytWysokaPensja THEN
-  DBMS_OUTPUT.PUT_LINE('Przekroczono limit');
+BEGIN 
+  dodaj_nowa_osobe(32,'Ignaczak','Gosia',null,TO_DATE('11/01/1196','dd/mm/yyyy'),'K');
 
 END;
 /
 
+--select * from osoby;
 -------------------------------------------------------------------------------------------------------------------
 
-4. Do bazy kadry wprowadzono 2 rekordy (musimy je wprowadzic) do tabeli 
-Osoby: 31 Karp Janusz 15/03/1971 M
-Zatrudnienia: 100 31 21/03/1970 21/01/1969 2 3000 1
-Nalezy zaprojektowaæ obs³ugê wyj¹tków które dla dowolnej osoby obs³u¿¹ nastêpuj¹ce wyj¹tki:
-a)'Data urodzenia jest póŸniejsza ni¿ data zatrudnienia!'
-b)'Data zatrudnienia jest póŸniejsza ni¿ data zwolnienia'
-c)'Data urodzenia jest póŸniejsza ni¿ data zatrudnienia i data zatrudnienia jest póŸniejsza ni¿ data zwolnienia'
+3. Utworzyæ procedure i funkcje dotyczaca obliczen liczby osob o zadanej plci wywolujac je obie 
+'Liczba kobiet = 18
+Liczba mê¿czyzn = 12'.
 
 
---INSERT INTO osoby VALUES(31,'Karp','Janusz',null,TO_DATE('15/03/1971','dd/mm/yyyy'),'M');
---INSERT INTO zatrudnienia VALUES(100,31,TO_DATE('21/03/1970','dd/mm/yyyy'),TO_DATE('21/01/1969','dd/mm/yyyy'),2,3000,1);
-
-DECLARE
-  z_id_os osoby.id_os%TYPE:=31;
-  z_d_ur osoby.d_ur%TYPE;
-  z_d_zat zatrudnienia.od%TYPE;
-  z_d_zw zatrudnienia.do%TYPE;
-  
-  w_urZat EXCEPTION;
-  w_zatZw EXCEPTION;
-  w_urZaZw EXCEPTION;
+CREATE OR REPLACE PROCEDURE policz_plec(
+  p_Plec osoby.plec%TYPE
+)AS
+z_ile NUMBER;
+z_plec VARCHAR2(20);
 BEGIN
-  SELECT o.d_ur, z.od, z.do
-  INTO z_d_ur, z_d_zat, z_d_zw
-  FROM osoby o JOIN zatrudnienia z ON o.id_os=z.id_os
-  WHERE o.id_os=z_id_os;
   
-  IF z_d_ur>z_d_zat AND z_d_zat>z_d_zw THEN
-  RAISE w_urZaZw;
-  END IF;
-  IF z_d_ur>z_d_zat THEN
-  RAISE w_urZat;
-  END IF;
-  IF z_d_zat>z_d_zw THEN
-  RAISE w_zatZw;
+  SELECT COUNT(id_os)
+  INTO z_ile
+  FROM osoby
+  WHERE plec=p_Plec;
+  
+  IF p_Plec='K' THEN
+    z_plec:='kobiet';
+  ELSE
+    z_plec:='mê¿czyzn';
   END IF;
   
-  
-EXCEPTION
-  WHEN w_urZat THEN
-  DBMS_OUTPUT.PUT_LINE('Data urodzenia jest póŸniejsza ni¿ data zatrudnienia!');
-  WHEN w_zatZw THEN
-  DBMS_OUTPUT.PUT_LINE('Data zatrudnienia jest póŸniejsza ni¿ data zwolnienia!');
-  WHEN w_urZaZw THEN
-  DBMS_OUTPUT.PUT_LINE('Data urodzenia jest póŸniejsza ni¿ data zatrudnienia i data zatrudnienia jest póŸniejsza ni¿ data zwolnienia!');
-
+  DBMS_OUTPUT.PUT_LINE('Liczba '||z_plec||' = '||z_ile );
 END;
 /
 
-5. Wykonac obsluge wyjaktu za pomoca wyjatku others, przy pomocy SQLCODE i SQLRRM. Przy czym obsluga tego powinna polegac na zapisie kodu bledu i tekstu o bledzie do tabeli dziennik_bledow skladajacy sie z dwóch pól(utworzyc te tabelke) kod NUMBER i komunikat VARCGAR(200). Blok w ktorym ma byc zrealizowana ta obsluga wuyjatkow zawiera kursor niejawny ktory wybiera te osoby dla ktorych aktualzny staz pracy wynosi od 1 do 100 pelnych przepracowanych lat.
+CREATE OR REPLACE FUNCTION policz_plec_funkcja(
+  p_PlecF osoby.plec%TYPE
+) RETURN NUMBER IS
+z_ile NUMBER;
+z_plec VARCHAR2(20);
+BEGIN
+  
+  SELECT COUNT(id_os)
+  INTO z_ile
+  FROM osoby
+  WHERE plec=p_PlecF;
+  
+  
+  RETURN z_ile;
+END;
+/
+
+DECLARE
+  z_plec osoby.plec%TYPE:='M';
+  z_ile NUMBER;
+  z_komunikat VARCHAR2(20);
+BEGIN
+  
+  IF z_plec='K' THEN
+    z_ile:=policz_plec_funkcja(z_plec);
+    z_komunikat:='kobiet';
+  ELSE
+    z_ile:=policz_plec_funkcja(z_plec);
+    z_komunikat:='mê¿czyzn';
+  END IF;
+  
+     DBMS_OUTPUT.PUT_LINE('Liczba '||z_komunikat||' = '||z_ile);
+END;
+/
+-------------------------------------------------------------------------------------------------------------------
+
+4. Zaprojektowac procedure wyswietlania danych id os nazwiska polaczonego z imieniem  kierownika i jego nazwsikko polaczonego z 1 imieniem oraz liczby dni kierowania wydzialem przy czym maja to byc dane osoby ktora najdluzej kierowala wydzialem przy czym nazwa wydzialu jest znana
+
+CREATE OR REPLACE PROCEDURE kierownik_Naj ( p_Nazwa_wydzialu wydzialy.nazwa%TYPE)
+AS
+z_id osoby.id_os%TYPE;
+z_nazwa VARCHAR2(50);
+z_d_ur osoby.d_ur%TYPE;
+z_plec osoby.plec%TYPE;
+BEGIN
+  SELECT id_os, INITCAP(nazwisko) || INITCAP(imie1) nazwisko_i_imie, d_ur, plec
+  INTO z_id, z_nazwa, z_d_ur, z_plec
+  FROM osoby o JOIN wydzialy w ON o.id_os=w.id_os
+  WHERE INITCAP(w.nazwa)=INITCAP(p_Nazwa_wydzialu)
+  AND id_os=(SELECT id_os
+             FROM kierownicy
+             WHERE (do-od)=(SELECT MAX(NVL(do-od,SYSDATE))
+                            FROM kierownicy));
+END;
+/
+ nieskonczone!!!!!!!!!
+
+
