@@ -1,0 +1,118 @@
+1. Zaprojektowac wyzwalacz dmlowy na poziomie wiersza, które bedzie umozliwia³ wprowadzanie kolejnych wartosci sekwencji do pola klucza g³ownego tabeli osoby. Napisac wczesniej sekwencje, wystartowac od 31.
+
+CREATE OR REPLACE TRIGGER insertIdBySeq
+BEFORE INSERT ON osoby
+FOR EACH ROW
+BEGIN
+  SELECT insertOsobySeq.NEXTVAL
+  INTO :new.id_os
+  FROM dual;
+END insertIdBySeq;
+/
+
+insert into osoby values(2222,'AAA','BBB', NULL,TO_DATE('01/02/1969','dd/mm/yyyy'),'K');
+
+2.Utworzyc wyzwalacz dml do zapisu wszystkich obserwacji wszystkich wykonywanych dzialan na tabeli zatrudnienia, w tym celu utworzyc tabele zapis
+
+CREATE TABLE zapis(
+id_zapis NUMBER PRIMARY KEY,
+akcja VARCHAR2(12), --AKCJA WYKOINYWANA NA TABELCE
+id_klucz NUMBER(2), --na ktorej osobie wykonywane
+DATA_ZAPIS date,
+nazw_uzytk VARCHAR2(25)
+);
+
+CREATE OR REPLACE TRIGGER akcjeZatrudnienia
+BEFORE INSERT OR UPDATE OR DELETE ON zatrudnienia
+FOR EACH ROW
+BEGIN 
+  IF INSERTING THEN
+    INSERT INTO zapis VALUES(insertIdZapisSeq.NEXTVAL,'insert', :new.id_os,SYSDATE,USER);
+  ELSIF UPDATING THEN
+    INSERT INTO zapis VALUES(insertIdZapisSeq.NEXTVAL,'update',:new.id_os,SYSDATE,USER);
+  ELSE
+    INSERT INTO zapis VALUES(insertIdZapisSeq.NEXTVAL,'delete',:old.id_os,SYSDATE,USER);
+  END IF;
+END akcjeZatrudnienia;
+/
+
+insert into zatrudnienia values(39,30,SYSDATE,null,1,2000,1);
+/
+
+select *  from zapis;
+/
+
+uwtorzyc wyzwalacz powinien posiadac obsluge dowolnego bledu, przy czym obsluga powinna wyswietlac odpowiedni komentarz wyswietlajacy blad.
+
+
+3.Zaprojektowac wyzwalacz dmlowy który bedzie w sposób ci¹g³y aktualizowac tabele:
+
+CREATE TABLE zatrudn_liczba(
+nazwa VARCHAR2(15),
+liczba_os NUMBER
+);
+ktora zawiera info o aktualnie pracujacej liczbie osob na poszczegolnych wydzialach
+
+CREATE OR REPLACE TRIGGER aktualizujLiczbeOsNaWydzialach
+AFTER INSERT OR DELETE ON zatrudnienia
+DECLARE
+  CURSOR k_liczba_os IS
+  SELECT COUNT(z.id_os) ile_osob, INITCAP(w.nazwa) nazwa
+  FROM zatrudnienia z JOIN wydzialy w ON z.id_w=w.id_w
+  WHERE z.do IS NULL
+  group by INITCAP(w.nazwa);
+BEGIN
+  DELETE FROM zatrudn_liczba;
+  FOR ii IN k_liczba_os LOOP
+    INSERT INTO zatrudn_liczba
+    VALUES(ii.nazwa, ii.ile_osob);
+  END LOOP;
+END aktualizujLiczbeOsNaWydzialach;
+/
+  select * from zatrudn_liczba;
+  /
+  insert into zatrudnienia values(59,30,SYSDATE,null,1,2000,1);
+/
+
+4. Zaprojektowac wyzwalacz dmlowy na poziomie wiersza ktory bedzie uniemozliwial o nazwie tr_DwiePrace, ktra juz pracuje
+
+CREATE OR REPLACE PACKAGE PakietDwiePrace AS
+z_osoba zatrudnienia.id_os%TYPE;
+END PakietDwiePrace;
+/
+CREATE OR REPLACE TRIGGER tr_DwiePraceB
+BEFORE INSERT OR UPDATE ON zatrudnienia
+FOR EACH ROW
+BEGIN
+  PakietDwiePrace.z_osoba:=:new.id_os;
+END tr_DwiePraceB;
+/
+
+
+
+CREATE OR REPLACE TRIGGER tr_DwiePraceA
+AFTER INSERT OR UPDATE ON zatrudnienia
+DECLARE
+  z_id_osoba zatrudnienia.id_os%TYPE;
+  z_liczwydz NUMBER;
+  w_DwiePrace EXCEPTION;
+BEGIN
+  z_id_osoba:=PakietDwiePrace.z_osoba;
+  
+  SELECT COUNT(id_os) liczba_os
+  INTO z_liczwydz
+  FROM zatrudnienia
+  WHERE id_os= PakietDwiePrace.z_osoba AND do IS NULL;
+  IF z_liczwydz > 1 THEN
+    RAISE  w_DwiePrace;
+    END IF;
+EXCEPTION
+    WHEN w_DwiePrace THEN
+    RAISE_APPLICATION_ERROR(-20000, 'osoba o id_os = ' || z_id_osoba ||' juz istnieje');
+END tr_DwiePraceA;
+/
+
+insert into zatrudnienia values(60,1,SYSDATE, null, 1,1000,1);
+/
+
+nie dziala?????
